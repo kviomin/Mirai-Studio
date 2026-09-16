@@ -15,7 +15,7 @@
 
         <!-- Форма входа -->
         <div id="authBox" class="space-y-4">
-            <input type="password" id="adminPass" placeholder="Введите пароль (1234)" class="w-full p-3 border rounded-xl text-sm outline-none">
+            <input type="password" id="adminPass" placeholder="Введите пароль (111199999)" class="w-full p-3 border rounded-xl text-sm outline-none">
             <button type="button" onclick="login()" class="w-full py-3 bg-stone-900 text-white font-medium rounded-xl hover:bg-stone-800 transition">Войти</button>
         </div>
 
@@ -45,7 +45,7 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co/rest/v1/";
+        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
