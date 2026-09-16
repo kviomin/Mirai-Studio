@@ -96,7 +96,7 @@
         let selectedVariant = {};
 
         async function loadProducts() {
-            if (supabase && SUPABASE_URL !== "https://YOUR_SUPABASE_PROJECT_ID.supabase.co") {
+            if (supabase && SUPABASE_URL !== "https://vtkjphnmkghyziysttyd.supabase.co/rest/v1/") {
                 try {
                     const { data } = await supabase.from('products').select('*');
                     if (data && data.length > 0) products = data;
