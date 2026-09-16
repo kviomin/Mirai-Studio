@@ -3,175 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIRAI STUDIO</title>
+    <title>MIRAI STUDIO — Админка</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-stone-50 text-stone-900 font-sans pb-20">
+<body class="p-4 bg-stone-100 min-h-screen flex items-center justify-center">
 
-    <!-- Хедер -->
-    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b z-40 p-4 text-center">
-        <h1 class="text-2xl font-black tracking-widest uppercase">MIRAI STUDIO</h1>
-    </header>
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-lg p-6">
+        <h1 class="text-xl font-bold uppercase mb-4 text-center tracking-wider">MIRAI STUDIO</h1>
 
-    <!-- Сетка товаров -->
-    <main class="max-w-4xl mx-auto p-4">
-        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <p class="col-span-full text-center text-stone-400 py-10">Загрузка каталога...</p>
+        <!-- Форма авторизации -->
+        <div id="authBox" class="space-y-4">
+            <input type="number" id="adminPass" placeholder="Введите пароль (1234)" class="w-full p-3 border rounded-xl text-center text-lg outline-none focus:border-stone-800">
+            <button type="button" onclick="login()" class="w-full py-3 bg-stone-900 text-white font-bold rounded-xl active:scale-95 transition">
+                Войти в панель
+            </button>
         </div>
-    </main>
 
-    <!-- Всплывающее окно карточки товара (Модалка) -->
-    <div id="productModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto p-6 relative animate-in fade-in slide-in-from-bottom duration-200">
-            
-            <button onclick="closeModal()" class="absolute top-4 right-4 bg-stone-100 p-2 rounded-full text-stone-600">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+        <!-- Панель добавления товара -->
+        <div id="adminForm" class="hidden space-y-4">
+            <p class="text-green-600 font-bold text-center text-sm">✓ Панель готова к работе</p>
 
-            <!-- Изображение -->
-            <div class="aspect-[3/4] bg-stone-100 rounded-xl overflow-hidden mb-4">
-                <img id="modalImg" src="" class="w-full h-full object-cover">
-            </div>
+            <form id="productForm" class="space-y-3" onsubmit="return false;">
+                <input type="text" id="pName" placeholder="Название изделия" required class="w-full p-3 border rounded-xl text-sm outline-none">
+                
+                <select id="pCategory" class="w-full p-3 border rounded-xl text-sm bg-white border">
+                    <option value="платья">Платья</option>
+                    <option value="костюмы">Костюмы</option>
+                    <option value="блузы">Блузы</option>
+                </select>
 
-            <h2 id="modalTitle" class="text-xl font-bold uppercase mb-1"></h2>
-            <p id="modalPrice" class="text-lg font-semibold text-amber-900 mb-3"></p>
-            <p id="modalFabric" class="text-xs text-stone-500 mb-2"></p>
-            <p id="modalDesc" class="text-sm text-stone-600 mb-4"></p>
+                <input type="number" id="pPrice" placeholder="Цена (KGS)" required class="w-full p-3 border rounded-xl text-sm outline-none">
+                <input type="text" id="pFabric" placeholder="Состав / Ткань (например: Шёлк 100%)" class="w-full p-3 border rounded-xl text-sm outline-none">
+                <textarea id="pDesc" placeholder="Описание изделия..." class="w-full p-3 border rounded-xl text-sm outline-none h-20"></textarea>
 
-            <!-- Переключатель цветов -->
-            <div class="mb-4">
-                <label class="block text-xs font-bold uppercase text-stone-400 mb-2">Цвет: <span id="selectedColorName" class="text-stone-800"></span></label>
-                <div id="modalColors" class="flex gap-3"></div>
-            </div>
+                <!-- Блок цветов и фото -->
+                <div class="border p-3 rounded-xl space-y-2 bg-stone-50">
+                    <label class="block text-xs font-bold text-stone-600 uppercase">Основной цвет и фото:</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="pColorName" placeholder="Цвет (напр: Чёрный)" class="w-1/2 p-2 border rounded-lg text-xs bg-white">
+                        <input type="color" id="pColorHex" value="#1a1a1a" class="w-1/2 h-9 p-1 border rounded-lg bg-white cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-stone-500 mb-1">Загрузить фото из галереи:</label>
+                        <input type="file" id="varImageFile" accept="image/*" class="text-xs w-full">
+                    </div>
+                </div>
 
-            <!-- Размеры -->
-            <div class="mb-6">
-                <label class="block text-xs font-bold uppercase text-stone-400 mb-2">Выберите размер:</label>
-                <div id="modalSizes" class="flex gap-2"></div>
-            </div>
+                <button type="button" onclick="handleSaveProduct()" id="saveBtn" class="w-full py-3 bg-amber-900 text-white font-bold rounded-xl active:scale-95 transition shadow-md">
+                    Опубликовать товар
+                </button>
+            </form>
 
-            <button onclick="orderViaTelegram()" class="w-full py-4 bg-stone-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition">
-                <span>Заказать в Telegram</span>
-            </button>
+            <p id="statusMsg" class="text-center text-xs font-bold min-h-[1rem]"></p>
         </div>
     </div>
 
     <script>
         const SUPABASE_URL = "https://vtkjphnmkghyztysttyd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
-        
-        let allProducts = [];
-        let currentProduct = null;
-        let selectedVariantIndex = 0;
-        let selectedSize = "M";
 
-        async function loadProducts() {
-            const grid = document.getElementById('productsGrid');
-            try {
-                if (window.supabase) {
-                    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    const { data, error } = await client.from('products').select('*').order('created_at', { ascending: false });
-                    if (!error && data) allProducts = data;
-                }
-            } catch (e) {
-                console.error(e);
+        function login() {
+            const pass = document.getElementById('adminPass').value.trim();
+            if (pass === "1234") {
+                document.getElementById('authBox').classList.add('hidden');
+                document.getElementById('adminForm').classList.remove('hidden');
+            } else {
+                alert("Неверный пароль! Введите 1234");
             }
+        }
 
-            if (allProducts.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center text-stone-400 py-10">Товаров пока нет.</p>';
+        async function handleSaveProduct() {
+            const msg = document.getElementById('statusMsg');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            const name = document.getElementById('pName').value.trim();
+            const price = parseInt(document.getElementById('pPrice').value);
+            
+            if (!name || isNaN(price)) {
+                msg.innerText = "Заполните название и цену!";
+                msg.className = "text-center text-xs font-bold text-red-600";
                 return;
             }
 
-            grid.innerHTML = allProducts.map((p, idx) => {
-                const img = (p.variants && p.variants[0] && p.variants[0].images) ? p.variants[0].images[0] : '';
-                return `
-                    <div onclick="openModal(${idx})" class="bg-white rounded-xl overflow-hidden shadow-sm border border-stone-100 cursor-pointer active:scale-95 transition">
-                        <div class="aspect-[3/4] bg-stone-100 relative">
-                            <img src="${img}" class="w-full h-full object-cover">
-                        </div>
-                        <div class="p-3">
-                            <h3 class="font-medium text-sm truncate uppercase">${p.name}</h3>
-                            <p class="font-bold text-xs text-amber-900 mt-1">${p.price} KGS</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            if (window.lucide) lucide.createIcons();
-        }
+            msg.innerText = "Сохранение...";
+            msg.className = "text-center text-xs font-bold text-amber-600";
+            saveBtn.disabled = true;
 
-        function openModal(index) {
-            currentProduct = allProducts[index];
-            selectedVariantIndex = 0;
-            selectedSize = (currentProduct.sizes && currentProduct.sizes[0]) || "M";
+            try {
+                const category = document.getElementById('pCategory').value;
+                const fabric = document.getElementById('pFabric').value;
+                const description = document.getElementById('pDesc').value;
+                const colorName = document.getElementById('pColorName').value.trim() || "Основной";
+                const colorHex = document.getElementById('pColorHex').value;
+                const fileInput = document.getElementById('varImageFile');
 
-            document.getElementById('modalTitle').innerText = currentProduct.name;
-            document.getElementById('modalPrice').innerText = `${currentProduct.price} KGS`;
-            document.getElementById('modalFabric').innerText = currentProduct.fabric ? `Состав: ${currentProduct.fabric}` : '';
-            document.getElementById('modalDesc').innerText = currentProduct.description || '';
+                let imageUrl = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80";
 
-            renderVariants();
-            renderSizes();
+                // 1. Прямая загрузка картинки через Fetch
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                    
+                    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/product-images/${cleanName}`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': file.type
+                        },
+                        body: file
+                    });
 
-            document.getElementById('productModal').classList.remove('hidden');
-        }
+                    if (uploadRes.ok) {
+                        imageUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${cleanName}`;
+                    }
+                }
 
-        function renderVariants() {
-            const variants = currentProduct.variants || [];
-            const container = document.getElementById('modalColors');
-            
-            if (variants.length > 0) {
-                const activeVar = variants[selectedVariantIndex];
-                document.getElementById('modalImg').src = activeVar.images[0] || '';
-                document.getElementById('selectedColorName').innerText = activeVar.color || '';
+                // 2. Данные для отправки
+                const payload = [{
+                    name, 
+                    category, 
+                    price, 
+                    description, 
+                    fabric,
+                    variants: [{ color: colorName, hex: colorHex, images: [imageUrl] }],
+                    sizes: ["S", "M", "L"]
+                }];
 
-                container.innerHTML = variants.map((v, i) => `
-                    <button onclick="selectVariant(${i})" class="w-8 h-8 rounded-full border-2 ${i === selectedVariantIndex ? 'border-stone-900 scale-110' : 'border-transparent'} p-0.5 transition">
-                        <span class="block w-full h-full rounded-full border border-stone-200" style="background-color: ${v.hex || '#1a1a1a'}"></span>
-                    </button>
-                `).join('');
+                // 3. Прямая запись в БД через REST API Supabase
+                const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!dbRes.ok) {
+                    const errData = await dbRes.json();
+                    throw new Error(errData.message || "Ошибка записи");
+                }
+
+                msg.innerText = "✓ Товар успешно опубликован!";
+                msg.className = "text-center text-xs font-bold text-green-600";
+                document.getElementById('productForm').reset();
+            } catch (err) {
+                msg.innerText = "Ошибка: " + err.message;
+                msg.className = "text-center text-xs font-bold text-red-600";
+            } finally {
+                saveBtn.disabled = false;
             }
         }
-
-        function selectVariant(index) {
-            selectedVariantIndex = index;
-            renderVariants();
-        }
-
-        function renderSizes() {
-            const sizes = currentProduct.sizes || ["S", "M", "L"];
-            const container = document.getElementById('modalSizes');
-
-            container.innerHTML = sizes.map(s => `
-                <button onclick="selectSize('${s}')" class="px-4 py-2 text-xs font-bold border rounded-lg ${selectedSize === s ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-200'}">
-                    ${s}
-                </button>
-            `).join('');
-        }
-
-        function selectSize(size) {
-            selectedSize = size;
-            renderSizes();
-        }
-
-        function closeModal() {
-            document.getElementById('productModal').classList.add('hidden');
-        }
-
-        function orderViaTelegram() {
-            const variant = currentProduct.variants[selectedVariantIndex];
-            const text = `Здравствуйте! Хочу заказать:\n` +
-                         `• Изделие: ${currentProduct.name}\n` +
-                         `• Размер: ${selectedSize}\n` +
-                         `• Цвет: ${variant ? variant.color : 'Основной'}\n` +
-                         `• Цена: ${currentProduct.price} KGS`;
-            
-            window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(text)}`, '_blank');
-        }
-
-        window.onload = loadProducts;
     </script>
 </body>
 </html>
+
