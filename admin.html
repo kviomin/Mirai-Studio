@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIRAI STUDIO — Админка</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="p-4 bg-stone-100 min-h-screen flex items-center justify-center">
 
     <div class="max-w-md w-full bg-white rounded-2xl shadow-lg p-6">
         <h1 class="text-xl font-bold uppercase mb-4 text-center tracking-wider">MIRAI STUDIO</h1>
 
-        <!-- Форма авторизации -->
+        <!-- Авторизация -->
         <div id="authBox" class="space-y-4">
             <input type="number" id="adminPass" placeholder="Введите пароль (1234)" class="w-full p-3 border rounded-xl text-center text-lg outline-none focus:border-stone-800">
             <button type="button" onclick="login()" class="w-full py-3 bg-stone-900 text-white font-bold rounded-xl active:scale-95 transition">
@@ -20,7 +19,7 @@
             </button>
         </div>
 
-        <!-- Панель добавления товара -->
+        <!-- Форма -->
         <div id="adminForm" class="hidden space-y-4">
             <p class="text-green-600 font-bold text-center text-sm">✓ Панель готова к работе</p>
 
@@ -34,18 +33,17 @@
                 </select>
 
                 <input type="number" id="pPrice" placeholder="Цена (KGS)" required class="w-full p-3 border rounded-xl text-sm outline-none">
-                <input type="text" id="pFabric" placeholder="Состав / Ткань (например: Шёлк 100%)" class="w-full p-3 border rounded-xl text-sm outline-none">
+                <input type="text" id="pFabric" placeholder="Состав / Ткань" class="w-full p-3 border rounded-xl text-sm outline-none">
                 <textarea id="pDesc" placeholder="Описание изделия..." class="w-full p-3 border rounded-xl text-sm outline-none h-20"></textarea>
 
-                <!-- Блок цветов и фото -->
                 <div class="border p-3 rounded-xl space-y-2 bg-stone-50">
-                    <label class="block text-xs font-bold text-stone-600 uppercase">Основной цвет и фото:</label>
+                    <label class="block text-xs font-bold text-stone-600 uppercase">Цвет и фото:</label>
                     <div class="flex gap-2">
                         <input type="text" id="pColorName" placeholder="Цвет (напр: Чёрный)" class="w-1/2 p-2 border rounded-lg text-xs bg-white">
                         <input type="color" id="pColorHex" value="#1a1a1a" class="w-1/2 h-9 p-1 border rounded-lg bg-white cursor-pointer">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-stone-500 mb-1">Загрузить фото из галереи:</label>
+                        <label class="block text-[10px] text-stone-500 mb-1">Фото из галереи (необязательно):</label>
                         <input type="file" id="varImageFile" accept="image/*" class="text-xs w-full">
                     </div>
                 </div>
@@ -55,98 +53,127 @@
                 </button>
             </form>
 
-            <p id="statusMsg" class="text-center text-xs font-bold min-h-[1rem]"></p>
+            <div id="statusBox" class="p-3 bg-gray-50 border rounded-xl hidden space-y-1">
+                <p id="statusMsg" class="text-center text-xs font-bold text-stone-700"></p>
+                <p id="errorDetail" class="text-[11px] text-red-600 break-words font-mono"></p>
+            </div>
         </div>
     </div>
 
     <script>
-    const SUPABASE_URL = "https://vtkjphnmkghyztysttyd.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
+        const SUPABASE_URL = "https://vtkjphnmkghyztysttyd.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
 
-    // Инициализируем клиент Supabase один раз глобально
-    let supabaseClient = null;
-    if (window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-
-    function login() {
-        const pass = document.getElementById('adminPass').value.trim();
-        if (pass === "1234") {
-            document.getElementById('authBox').classList.add('hidden');
-            document.getElementById('adminForm').classList.remove('hidden');
-        } else {
-            alert("Неверный пароль! Введите 1234");
-        }
-    }
-
-    async function handleSaveProduct() {
-        const msg = document.getElementById('statusMsg');
-        const saveBtn = document.getElementById('saveBtn');
-        
-        const name = document.getElementById('pName').value.trim();
-        const price = parseInt(document.getElementById('pPrice').value);
-        
-        if (!name || isNaN(price)) {
-            msg.innerText = "Заполните название и цену!";
-            msg.className = "text-center text-xs font-bold text-red-600";
-            return;
+        function login() {
+            const pass = document.getElementById('adminPass').value.trim();
+            if (pass === "1234") {
+                document.getElementById('authBox').classList.add('hidden');
+                document.getElementById('adminForm').classList.remove('hidden');
+            } else {
+                alert("Неверный пароль!");
+            }
         }
 
-        msg.innerText = "Публикация...";
-        msg.className = "text-center text-xs font-bold text-amber-600";
-        saveBtn.disabled = true;
+        async function handleSaveProduct() {
+            const statusBox = document.getElementById('statusBox');
+            const msg = document.getElementById('statusMsg');
+            const errDetail = document.getElementById('errorDetail');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            const name = document.getElementById('pName').value.trim();
+            const price = parseInt(document.getElementById('pPrice').value);
+            
+            statusBox.classList.remove('hidden');
+            errDetail.innerText = "";
 
-        try {
-            const category = document.getElementById('pCategory').value;
-            const fabric = document.getElementById('pFabric').value;
-            const description = document.getElementById('pDesc').value;
-            const colorName = document.getElementById('pColorName').value.trim() || "Основной";
-            const colorHex = document.getElementById('pColorHex').value;
+            if (!name || isNaN(price)) {
+                msg.innerText = "Заполните название и цену!";
+                msg.className = "text-center text-xs font-bold text-red-600";
+                return;
+            }
 
-            const fileInput = document.getElementById('varImageFile');
-            let imageUrl = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80";
+            msg.innerText = "1/2. Загрузка данных...";
+            msg.className = "text-center text-xs font-bold text-amber-600";
+            saveBtn.disabled = true;
 
-            // 1. Загрузка фотографии в бакет 'product-images'
-            if (fileInput.files.length > 0 && supabaseClient) {
-                const file = fileInput.files[0];
-                const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            try {
+                const category = document.getElementById('pCategory').value;
+                const fabric = document.getElementById('pFabric').value;
+                const description = document.getElementById('pDesc').value;
+                const colorName = document.getElementById('pColorName').value.trim() || "Основной";
+                const colorHex = document.getElementById('pColorHex').value;
+                const fileInput = document.getElementById('varImageFile');
 
-                const { error: uploadError } = await supabaseClient.storage.from('product-images').upload(fileName, file);
-                
-                if (!uploadError) {
-                    const { data } = supabaseClient.storage.from('product-images').getPublicUrl(fileName);
-                    imageUrl = data.publicUrl;
+                let imageUrl = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80";
+
+                // 1. Попытка загрузки картинки (если выбрана)
+                if (fileInput.files.length > 0) {
+                    msg.innerText = "1/2. Загрузка фотографии...";
+                    const file = fileInput.files[0];
+                    const cleanName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                    
+                    try {
+                        const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/product-images/${cleanName}`, {
+                            method: 'POST',
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'x-upsert': 'true'
+                            },
+                            body: file
+                        });
+
+                        if (uploadRes.ok) {
+                            imageUrl = `${SUPABASE_URL}/storage/v1/object/public/product-images/${cleanName}`;
+                        } else {
+                            const errTxt = await uploadRes.text();
+                            console.warn("Ошибка фото:", errTxt);
+                        }
+                    } catch (imgErr) {
+                        console.warn("Пропуск загрузки фото из-за сети:", imgErr);
+                    }
                 }
+
+                // 2. Отправка товара
+                msg.innerText = "2/2. Сохранение в базу...";
+                const payload = [{
+                    name, 
+                    category, 
+                    price, 
+                    description, 
+                    fabric,
+                    variants: [{ color: colorName, hex: colorHex, images: [imageUrl] }],
+                    sizes: ["S", "M", "L"]
+                }];
+
+                const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!dbRes.ok) {
+                    const errJson = await dbRes.json();
+                    throw new Error(`БД [${dbRes.status}]: ${errJson.message || JSON.stringify(errJson)}`);
+                }
+
+                msg.innerText = "✓ Товар успешно опубликован!";
+                msg.className = "text-center text-xs font-bold text-green-600";
+                document.getElementById('productForm').reset();
+
+            } catch (err) {
+                msg.innerText = "❌ Ошибка отправки";
+                msg.className = "text-center text-xs font-bold text-red-600";
+                errDetail.innerText = err.message || String(err);
+            } finally {
+                saveBtn.disabled = false;
             }
-
-            // 2. Формирование записи товара
-            const newProduct = {
-                name, 
-                category, 
-                price, 
-                description, 
-                fabric,
-                variants: [
-                    { color: colorName, hex: colorHex, images: [imageUrl] }
-                ],
-                sizes: ["S", "M", "L"]
-            };
-
-            // 3. Отправка в базу данных
-            if (supabaseClient) {
-                const { error: dbError } = await supabaseClient.from('products').insert([newProduct]);
-                if (dbError) throw dbError;
-            }
-
-            msg.innerText = "✓ Товар успешно опубликован!";
-            msg.className = "text-center text-xs font-bold text-green-600";
-            document.getElementById('productForm').reset();
-        } catch (err) {
-            msg.innerText = "Ошибка: " + err.message;
-            msg.className = "text-center text-xs font-bold text-red-600";
-        } finally {
-            saveBtn.disabled = false;
         }
-    }
-</script>
-
+    </script>
+</body>
+</html>
