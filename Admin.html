@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIRAI STUDIO — Админ-панель</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f0; color: #1a1a1a; }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-6 border border-stone-200">
+        
+        <div class="flex items-center justify-between border-b pb-4 mb-6">
+            <div>
+                <h1 class="text-xl font-bold uppercase tracking-wider">MIRAI STUDIO</h1>
+                <p class="text-xs text-stone-500">Панель управления каталогом товаров</p>
+            </div>
+            <a href="index.html" class="text-xs bg-stone-100 text-stone-700 px-3 py-1.5 rounded-lg font-medium">← На сайт</a>
+        </div>
+
+        <div id="authBox" class="space-y-4">
+            <h2 class="text-lg font-semibold text-stone-800">Вход в управление</h2>
+            <input type="password" id="adminPass" placeholder="Введите пароль администратора" class="w-full p-3 border rounded-xl outline-none text-sm">
+            <button onclick="checkPass()" class="w-full py-3 bg-stone-900 text-white font-medium rounded-xl">Войти</button>
+        </div>
+
+        <div id="adminForm" class="hidden space-y-6">
+            <h2 class="text-lg font-bold text-stone-900 border-b pb-2">Добавить новый товар</h2>
+
+            <form id="productForm" onsubmit="handleSaveProduct(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Название изделия</label>
+                    <input type="text" id="pName" required placeholder="Например: Платье Silk" class="w-full p-3 border rounded-xl text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Категория</label>
+                        <select id="pCategory" class="w-full p-3 border rounded-xl text-sm bg-white">
+                            <option value="платья">Платья</option>
+                            <option value="костюмы">Костюмы</option>
+                            <option value="блузы">Блузы</option>
+                            <option value="юбки">Юбки</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Цена (KGS)</label>
+                        <input type="number" id="pPrice" required placeholder="2800" class="w-full p-3 border rounded-xl text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Состав / Ткань</label>
+                    <input type="text" id="pFabric" placeholder="100% Шёлк Армани" class="w-full p-3 border rounded-xl text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Описание изделия</label>
+                    <textarea id="pDesc" rows="3" placeholder="Описание кроя, длины и особенности модели..." class="w-full p-3 border rounded-xl text-sm"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 uppercase mb-1">Доступные размеры</label>
+                    <div class="flex space-x-3 text-sm">
+                        <label class="flex items-center gap-1.5"><input type="checkbox" value="S" class="size-check" checked> S</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" value="M" class="size-check" checked> M</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" value="L" class="size-check" checked> L</label>
+                        <label class="flex items-center gap-1.5"><input type="checkbox" value="XL" class="size-check"> XL</label>
+                    </div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <label class="block text-xs font-semibold text-stone-700 uppercase mb-2">Расцветка и Фото с галереи</label>
+                    <div class="p-4 bg-stone-50 rounded-xl border space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" id="varColor" placeholder="Название цвета (Черный)" class="p-2.5 border rounded-lg text-sm bg-white">
+                            <input type="color" id="varHex" value="#1a1a1a" class="h-10 w-full rounded-lg border cursor-pointer p-1 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-stone-500 mb-1">Выбрать фото из галереи:</label>
+                            <input type="file" id="varImageFile" accept="image/*" class="text-xs w-full text-stone-600">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="saveBtn" class="w-full py-4 bg-amber-800 text-white font-bold rounded-xl flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i> Опубликовать товар на сайте
+                </button>
+            </form>
+            <p id="statusMsg" class="text-center text-xs font-medium mt-2"></p>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://YOUR_SUPABASE_PROJECT_ID.supabase.co";
+        const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+        const ADMIN_SECRET = "1234";
+
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        function checkPass() {
+            if (document.getElementById('adminPass').value === ADMIN_SECRET) {
+                document.getElementById('authBox').classList.add('hidden');
+                document.getElementById('adminForm').classList.remove('hidden');
+            } else {
+                alert('Неверный пароль!');
+            }
+        }
+
+        async function handleSaveProduct(e) {
+            e.preventDefault();
+            const msg = document.getElementById('statusMsg');
+            const saveBtn = document.getElementById('saveBtn');
+
+            msg.innerText = "Сохранение...";
+            msg.className = "text-center text-xs text-amber-700";
+            saveBtn.disabled = true;
+
+            try {
+                const name = document.getElementById('pName').value;
+                const category = document.getElementById('pCategory').value;
+                const price = parseInt(document.getElementById('pPrice').value);
+                const fabric = document.getElementById('pFabric').value;
+                const description = document.getElementById('pDesc').value;
+                const sizes = Array.from(document.querySelectorAll('.size-check:checked')).map(c => c.value);
+
+                const fileInput = document.getElementById('varImageFile');
+                let imageUrl = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80";
+
+                if (fileInput.files.length > 0 && supabase) {
+                    const file = fileInput.files[0];
+                    const fileName = `${Date.now()}_${file.name}`;
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('product-images')
+                        .upload(fileName, file);
+
+                    if (!uploadError) {
+                        const { data: publicUrlData } = supabase.storage
+                            .from('product-images')
+                            .getPublicUrl(fileName);
+                        imageUrl = publicUrlData.publicUrl;
+                    }
+                }
+
+                const colorName = document.getElementById('varColor').value || "Основной";
+                const colorHex = document.getElementById('varHex').value || "#1a1a1a";
+
+                const newProduct = {
+                    name, category, price, description, fabric, sizes,
+                    variants: [{ color: colorName, hex: colorHex, images: [imageUrl] }]
+                };
+
+                if (supabase) {
+                    const { error } = await supabase.from('products').insert([newProduct]);
+                    if (error) throw error;
+                }
+
+                msg.innerText = "✓ Товар опубликован!";
+                msg.className = "text-center text-xs font-bold text-green-600";
+                document.getElementById('productForm').reset();
+
+            } catch (err) {
+                msg.innerText = "Ошибка: " + err.message;
+                msg.className = "text-center text-xs font-bold text-red-600";
+            } finally {
+                saveBtn.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
+</body>
+</html>
