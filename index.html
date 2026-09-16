@@ -71,7 +71,7 @@
     </footer>
 
     <script>
-        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co/rest/v1/";
+        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
         const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -96,7 +96,7 @@
         let selectedVariant = {};
 
         async function loadProducts() {
-            if (supabase && SUPABASE_URL !== "https://vtkjphnmkghyziysttyd.supabase.co/rest/v1/") {
+            if (supabase && SUPABASE_URL !== "https://vtkjphnmkghyziysttyd.supabase.co") {
                 try {
                     const { data } = await supabase.from('products').select('*');
                     if (data && data.length > 0) products = data;
