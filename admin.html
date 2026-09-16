@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIRAI STUDIO — Админ-панель</title>
+    <title>MIRAI STUDIO — Админка</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="p-4 bg-stone-100 min-h-screen flex items-center justify-center">
 
@@ -15,13 +13,20 @@
 
         <!-- Форма входа -->
         <div id="authBox" class="space-y-4">
-            <input type="password" id="adminPass" placeholder="Введите пароль (111199999)" class="w-full p-3 border rounded-xl text-sm outline-none">
-            <button type="button" onclick="login()" class="w-full py-3 bg-stone-900 text-white font-medium rounded-xl hover:bg-stone-800 transition">Войти</button>
+            <input type="number" id="adminPass" placeholder="Введите пароль (1234)" class="w-full p-3 border rounded-xl text-lg text-center outline-none">
+            <button type="button" onclick="checkPassword()" class="w-full py-3 bg-stone-900 text-white font-bold rounded-xl active:bg-amber-800">
+                Войти в систему
+            </button>
         </div>
 
-        <!-- Панель управления -->
-        <div id="adminForm" class="hidden space-y-4 mt-4">
-            <p class="text-green-600 font-bold text-center">Успешный вход!</p>
+        <!-- Сообщение отладки -->
+        <div id="debugLog" class="mt-4 p-3 bg-stone-50 text-xs text-stone-600 rounded-lg break-all">
+            Статус: Ожидание ввода пароля...
+        </div>
+
+        <!-- Форма добавления товара -->
+        <div id="adminForm" class="hidden space-y-4 mt-4 border-t pt-4">
+            <p class="text-green-600 font-bold text-center">✓ Вход выполнен!</p>
             <form id="productForm" onsubmit="handleSaveProduct(event)" class="space-y-3">
                 <input type="text" id="pName" placeholder="Название изделия" required class="w-full p-3 border rounded-xl text-sm">
                 <select id="pCategory" class="w-full p-3 border rounded-xl text-sm bg-white">
@@ -45,60 +50,25 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
-        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        const SUPABASE_URL = "https://vtkjphnmkghyztysttyd.supabase.co";
+        // Вставьте ваш ключ без пробелов внутри кавычек ниже:
+        const SUPABASE_ANON_KEY = "vtkjphnmkghyziysttyd"; 
 
-        function login() {
-            const pass = document.getElementById('adminPass').value.trim();
-            if (pass === "1234") {
+        function log(msg) {
+            document.getElementById('debugLog').innerText = "Статус: " + msg;
+        }
+
+        function checkPassword() {
+            log("Кнопка нажата. Проверяем пароль...");
+            const input = document.getElementById('adminPass').value.trim();
+            
+            if (input === "1234") {
+                log("Пароль верный! Открываем админку...");
                 document.getElementById('authBox').classList.add('hidden');
                 document.getElementById('adminForm').classList.remove('hidden');
             } else {
-                alert("Неверный пароль! Попробуйте 1234");
-            }
-        }
-
-        async function handleSaveProduct(e) {
-            e.preventDefault();
-            const msg = document.getElementById('statusMsg');
-            msg.innerText = "Сохранение...";
-            
-            try {
-                const name = document.getElementById('pName').value;
-                const category = document.getElementById('pCategory').value;
-                const price = parseInt(document.getElementById('pPrice').value);
-                const fabric = document.getElementById('pFabric').value;
-                const description = document.getElementById('pDesc').value;
-
-                const fileInput = document.getElementById('varImageFile');
-                let imageUrl = "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80";
-
-                if (fileInput.files.length > 0 && supabase) {
-                    const file = fileInput.files[0];
-                    const fileName = `${Date.now()}_${file.name}`;
-                    const { error } = await supabase.storage.from('product-images').upload(fileName, file);
-                    if (!error) {
-                        const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
-                        imageUrl = data.publicUrl;
-                    }
-                }
-
-                const newProduct = {
-                    name, category, price, description, fabric,
-                    variants: [{ color: "Основной", hex: "#1a1a1a", images: [imageUrl] }],
-                    sizes: ["S", "M", "L"]
-                };
-
-                if (supabase) {
-                    await supabase.from('products').insert([newProduct]);
-                }
-
-                msg.innerText = "✓ Опубликовано!";
-                msg.className = "text-center text-xs text-green-600 font-bold";
-                document.getElementById('productForm').reset();
-            } catch (err) {
-                msg.innerText = "Ошибка сохранения";
+                log("Ошибка: Введён неверный пароль (" + input + ")");
+                alert("Неверный пароль! Введите 1234");
             }
         }
     </script>
