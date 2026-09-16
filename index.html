@@ -3,239 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIRAI STUDIO — Собственное производство одежды</title>
+    <title>MIRAI STUDIO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf9f6; color: #1a1a1a; }
-    </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-stone-50 text-stone-900 font-sans pb-20">
 
-    <header class="sticky top-0 z-40 bg-[#faf9f6]/90 backdrop-blur-md border-b border-stone-200 px-4 lg:px-8 py-4 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-            <span class="text-2xl font-bold tracking-widest uppercase">MIRAI</span>
-            <span class="text-xs bg-stone-900 text-stone-100 px-2 py-0.5 rounded tracking-wider uppercase font-medium">Studio</span>
-        </div>
-        <button id="cartBtn" onclick="toggleCart()" class="relative p-2 text-stone-800 hover:text-stone-600 transition">
-            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
-            <span id="cartCount" class="absolute top-0 right-0 bg-amber-700 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
-        </button>
+    <!-- Хедер -->
+    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b z-40 p-4 text-center">
+        <h1 class="text-2xl font-black tracking-widest uppercase">MIRAI STUDIO</h1>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full flex-grow">
-        <div class="mb-10 text-center max-w-2xl mx-auto">
-            <h1 class="text-3xl md:text-4xl font-light tracking-tight text-stone-900 mb-2">Лаконичная одежда собственного производства</h1>
-            <p class="text-stone-500 text-sm">Продуманные лекала, премиальные ткани и безупречная посадка.</p>
+    <!-- Сетка товаров -->
+    <main class="max-w-4xl mx-auto p-4">
+        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <p class="col-span-full text-center text-stone-400 py-10">Загрузка каталога...</p>
         </div>
-
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"></div>
     </main>
 
-    <div id="productModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative p-6 shadow-2xl">
-            <button onclick="closeModal()" class="absolute top-4 right-4 p-2 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition">
+    <!-- Всплывающее окно карточки товара (Модалка) -->
+    <div id="productModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto p-6 relative animate-in fade-in slide-in-from-bottom duration-200">
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 bg-stone-100 p-2 rounded-full text-stone-600">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-            <div id="modalContent"></div>
-        </div>
-    </div>
 
-    <div id="cartDrawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col justify-between">
-        <div class="p-6 border-b border-stone-200 flex items-center justify-between">
-            <h2 class="text-xl font-semibold flex items-center gap-2">
-                <i data-lucide="shopping-bag" class="w-5 h-5"></i> Ваша корзина
-            </h2>
-            <button onclick="toggleCart()" class="p-2 text-stone-500 hover:text-stone-800">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-        <div id="cartItems" class="p-6 flex-grow overflow-y-auto space-y-4">
-            <p class="text-stone-400 text-center py-8">Корзина пуста</p>
-        </div>
-        <div class="p-6 border-t border-stone-200 bg-stone-50 space-y-4">
-            <div class="flex justify-between text-lg font-semibold text-stone-900">
-                <span>Итого:</span>
-                <span id="cartTotal">0 KGS</span>
+            <!-- Изображение -->
+            <div class="aspect-[3/4] bg-stone-100 rounded-xl overflow-hidden mb-4">
+                <img id="modalImg" src="" class="w-full h-full object-cover">
             </div>
-            <button onclick="checkoutTelegram()" class="w-full py-3.5 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition flex items-center justify-center gap-2 shadow-lg">
-                <i data-lucide="send" class="w-4 h-4"></i> Оформить заказ в Telegram
+
+            <h2 id="modalTitle" class="text-xl font-bold uppercase mb-1"></h2>
+            <p id="modalPrice" class="text-lg font-semibold text-amber-900 mb-3"></p>
+            <p id="modalFabric" class="text-xs text-stone-500 mb-2"></p>
+            <p id="modalDesc" class="text-sm text-stone-600 mb-4"></p>
+
+            <!-- Переключатель цветов -->
+            <div class="mb-4">
+                <label class="block text-xs font-bold uppercase text-stone-400 mb-2">Цвет: <span id="selectedColorName" class="text-stone-800"></span></label>
+                <div id="modalColors" class="flex gap-3"></div>
+            </div>
+
+            <!-- Размеры -->
+            <div class="mb-6">
+                <label class="block text-xs font-bold uppercase text-stone-400 mb-2">Выберите размер:</label>
+                <div id="modalSizes" class="flex gap-2"></div>
+            </div>
+
+            <button onclick="orderViaTelegram()" class="w-full py-4 bg-stone-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition">
+                <span>Заказать в Telegram</span>
             </button>
         </div>
     </div>
-
-    <footer class="border-t border-stone-200 bg-white py-6 text-center text-xs text-stone-400 mt-12">
-        © MIRAI STUDIO. Собственное производство.
-    </footer>
 
     <script>
-        const SUPABASE_URL = "https://vtkjphnmkghyziysttyd.supabase.co";
+        const SUPABASE_URL = "https://vtkjphnmkghyztysttyd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_-HXb9jeMmCmE8IJyOnZRSQ_hclHTZB2";
-        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-        const demoProducts = [
-            {
-                id: "1",
-                name: "Платье шёлковое Mirai Silk",
-                category: "платья",
-                price: 3200,
-                description: "Премиальный шёлк Армани. Идеальная посадка по фигуре, мягкая драпировка.",
-                fabric: "100% Шёлк Армани",
-                variants: [
-                    { color: "Бежевый", hex: "#e4d4c8", images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80"] },
-                    { color: "Чёрный", hex: "#1a1a1a", images: ["https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80"] }
-                ],
-                sizes: ["S", "M", "L"]
-            }
-        ];
-
-        let products = demoProducts;
-        let cart = [];
-        let selectedVariant = {};
+        
+        let allProducts = [];
+        let currentProduct = null;
+        let selectedVariantIndex = 0;
+        let selectedSize = "M";
 
         async function loadProducts() {
-            if (supabase && SUPABASE_URL !== "https://vtkjphnmkghyziysttyd.supabase.co") {
-                try {
-                    const { data } = await supabase.from('products').select('*');
-                    if (data && data.length > 0) products = data;
-                } catch (e) {}
+            const grid = document.getElementById('productsGrid');
+            try {
+                if (window.supabase) {
+                    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    const { data, error } = await client.from('products').select('*').order('created_at', { ascending: false });
+                    if (!error && data) allProducts = data;
+                }
+            } catch (e) {
+                console.error(e);
             }
-            renderProducts(products);
-        }
 
-        function renderProducts(items) {
-            const grid = document.getElementById('productGrid');
-            grid.innerHTML = items.map(p => {
-                const firstVar = p.variants[0];
-                return `
-                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-100 flex flex-col justify-between">
-                        <div class="relative aspect-[3/4] cursor-pointer" onclick="openModal('${p.id}')">
-                            <img src="${firstVar.images[0]}" class="w-full h-full object-cover">
-                            <span class="absolute top-3 left-3 bg-white/80 text-stone-800 text-xs px-2.5 py-1 rounded-full uppercase tracking-wider font-medium">${p.category}</span>
-                        </div>
-                        <div class="p-5 flex flex-col justify-between flex-grow">
-                            <div>
-                                <h3 class="font-medium text-stone-900 text-lg mb-1">${p.name}</h3>
-                                <p class="text-stone-500 text-xs mb-3">${p.description}</p>
-                            </div>
-                            <div>
-                                <div class="flex space-x-1.5 mb-4">
-                                    ${p.variants.map(v => `<span class="w-4 h-4 rounded-full border" style="background-color: ${v.hex}"></span>`).join('')}
-                                </div>
-                                <div class="flex items-center justify-between pt-2 border-t border-stone-100">
-                                    <span class="text-lg font-bold text-stone-900">${p.price} KGS</span>
-                                    <button onclick="openModal('${p.id}')" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-medium">Выбрать</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openModal(id) {
-            const p = products.find(x => x.id === id);
-            selectedVariant[id] = { colorIndex: 0, size: p.sizes[0] };
-            updateModalView(p);
-            document.getElementById('productModal').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        function updateModalView(p) {
-            const sel = selectedVariant[p.id];
-            const variant = p.variants[sel.colorIndex];
-            document.getElementById('modalContent').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="aspect-[3/4] rounded-xl overflow-hidden bg-stone-100">
-                        <img src="${variant.images[0]}" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex flex-col justify-between">
-                        <div>
-                            <h2 class="text-2xl font-bold text-stone-900">${p.name}</h2>
-                            <p class="text-xl font-bold text-stone-900 mt-1">${p.price} KGS</p>
-                            <p class="text-stone-600 text-sm mt-3">${p.description}</p>
-                            <p class="text-xs text-stone-400 mt-2">Ткань: ${p.fabric}</p>
-                            
-                            <div class="mt-4">
-                                <label class="text-xs font-semibold block mb-2">Цвет: ${variant.color}</label>
-                                <div class="flex space-x-2">
-                                    ${p.variants.map((v, idx) => `
-                                        <button onclick="selectColor('${p.id}', ${idx})" class="w-7 h-7 rounded-full border-2 ${idx === sel.colorIndex ? 'border-stone-900' : 'border-stone-200'}" style="background-color: ${v.hex}"></button>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="text-xs font-semibold block mb-2">Размер: ${sel.size}</label>
-                                <div class="flex space-x-2">
-                                    ${p.sizes.map(s => `
-                                        <button onclick="selectSize('${p.id}', '${s}')" class="px-3 py-1 rounded-lg border text-xs ${s === sel.size ? 'bg-stone-900 text-white' : 'bg-white text-stone-700'}">${s}</button>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="addToCart('${p.id}')" class="w-full mt-6 py-3 rounded-xl bg-stone-900 text-white font-medium">Добавить в корзину</button>
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-        }
-
-        function selectColor(id, idx) { selectedVariant[id].colorIndex = idx; updateModalView(products.find(x => x.id === id)); }
-        function selectSize(id, size) { selectedVariant[id].size = size; updateModalView(products.find(x => x.id === id)); }
-        function closeModal() { document.getElementById('productModal').classList.add('hidden'); }
-
-        function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            const sel = selectedVariant[id];
-            cart.push({ product: p, color: p.variants[sel.colorIndex].color, size: sel.size, price: p.price });
-            closeModal();
-            updateCartUI();
-            toggleCart();
-        }
-
-        function updateCartUI() {
-            document.getElementById('cartCount').innerText = cart.length;
-            const container = document.getElementById('cartItems');
-            if (cart.length === 0) {
-                container.innerHTML = `<p class="text-stone-400 text-center py-8">Корзина пуста</p>`;
-                document.getElementById('cartTotal').innerText = `0 KGS`;
+            if (allProducts.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center text-stone-400 py-10">Товаров пока нет.</p>';
                 return;
             }
-            let total = 0;
-            container.innerHTML = cart.map((item, idx) => {
-                total += item.price;
+
+            grid.innerHTML = allProducts.map((p, idx) => {
+                const img = (p.variants && p.variants[0] && p.variants[0].images) ? p.variants[0].images[0] : '';
                 return `
-                    <div class="flex items-center justify-between border-b pb-2">
-                        <div>
-                            <h4 class="font-medium text-stone-900 text-sm">${item.product.name}</h4>
-                            <p class="text-xs text-stone-500">${item.color} | ${item.size}</p>
-                            <span class="text-xs font-bold text-stone-800">${item.price} KGS</span>
+                    <div onclick="openModal(${idx})" class="bg-white rounded-xl overflow-hidden shadow-sm border border-stone-100 cursor-pointer active:scale-95 transition">
+                        <div class="aspect-[3/4] bg-stone-100 relative">
+                            <img src="${img}" class="w-full h-full object-cover">
                         </div>
-                        <button onclick="cart.splice(${idx},1); updateCartUI();" class="text-stone-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate uppercase">${p.name}</h3>
+                            <p class="font-bold text-xs text-amber-900 mt-1">${p.price} KGS</p>
+                        </div>
                     </div>
                 `;
             }).join('');
-            document.getElementById('cartTotal').innerText = `${total} KGS`;
-            lucide.createIcons();
+            
+            if (window.lucide) lucide.createIcons();
         }
 
-        function toggleCart() { document.getElementById('cartDrawer').classList.toggle('translate-x-full'); }
+        function openModal(index) {
+            currentProduct = allProducts[index];
+            selectedVariantIndex = 0;
+            selectedSize = (currentProduct.sizes && currentProduct.sizes[0]) || "M";
 
-        function checkoutTelegram() {
-            if (cart.length === 0) return alert('Корзина пуста!');
-            let text = "🛍️ *Новый заказ MIRAI STUDIO!*\n\n";
-            let total = 0;
-            cart.forEach((c, idx) => {
-                text += `${idx + 1}. ${c.product.name} (${c.color}, Размер: ${c.size}) — ${c.price} KGS\n`;
-                total += c.price;
-            });
-            text += `\n💰 *Итого:* ${total} KGS`;
-            window.open(`https://t.me/share/url?url=${encodeURIComponent(text)}`, '_blank');
+            document.getElementById('modalTitle').innerText = currentProduct.name;
+            document.getElementById('modalPrice').innerText = `${currentProduct.price} KGS`;
+            document.getElementById('modalFabric').innerText = currentProduct.fabric ? `Состав: ${currentProduct.fabric}` : '';
+            document.getElementById('modalDesc').innerText = currentProduct.description || '';
+
+            renderVariants();
+            renderSizes();
+
+            document.getElementById('productModal').classList.remove('hidden');
         }
 
-        document.addEventListener('DOMContentLoaded', () => { loadProducts(); lucide.createIcons(); });
+        function renderVariants() {
+            const variants = currentProduct.variants || [];
+            const container = document.getElementById('modalColors');
+            
+            if (variants.length > 0) {
+                const activeVar = variants[selectedVariantIndex];
+                document.getElementById('modalImg').src = activeVar.images[0] || '';
+                document.getElementById('selectedColorName').innerText = activeVar.color || '';
+
+                container.innerHTML = variants.map((v, i) => `
+                    <button onclick="selectVariant(${i})" class="w-8 h-8 rounded-full border-2 ${i === selectedVariantIndex ? 'border-stone-900 scale-110' : 'border-transparent'} p-0.5 transition">
+                        <span class="block w-full h-full rounded-full border border-stone-200" style="background-color: ${v.hex || '#1a1a1a'}"></span>
+                    </button>
+                `).join('');
+            }
+        }
+
+        function selectVariant(index) {
+            selectedVariantIndex = index;
+            renderVariants();
+        }
+
+        function renderSizes() {
+            const sizes = currentProduct.sizes || ["S", "M", "L"];
+            const container = document.getElementById('modalSizes');
+
+            container.innerHTML = sizes.map(s => `
+                <button onclick="selectSize('${s}')" class="px-4 py-2 text-xs font-bold border rounded-lg ${selectedSize === s ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-200'}">
+                    ${s}
+                </button>
+            `).join('');
+        }
+
+        function selectSize(size) {
+            selectedSize = size;
+            renderSizes();
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        function orderViaTelegram() {
+            const variant = currentProduct.variants[selectedVariantIndex];
+            const text = `Здравствуйте! Хочу заказать:\n` +
+                         `• Изделие: ${currentProduct.name}\n` +
+                         `• Размер: ${selectedSize}\n` +
+                         `• Цвет: ${variant ? variant.color : 'Основной'}\n` +
+                         `• Цена: ${currentProduct.price} KGS`;
+            
+            window.open(`https://t.me/share/url?url=&text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        window.onload = loadProducts;
     </script>
 </body>
 </html>
